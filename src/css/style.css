@@ -1,0 +1,21 @@
+
+
+body {
+    font-family: Helvetica, Helvetia,sans-serif ;
+}
+
+.cardinalidad  {
+    display:inline;
+    font-size:x-small;
+    font-weight:400;
+}
+
+.type {
+    font-size:xx-small;
+    font-weight:400;
+}
+
+.documentacion {
+    font-weight:400;
+}
+

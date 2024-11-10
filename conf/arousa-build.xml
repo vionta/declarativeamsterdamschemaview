@@ -1,0 +1,322 @@
+<project name="arousa-build-file" 
+	 xmlns:ivy="antlib:org.apache.ivy.ant"
+	 >
+
+  <!--
+      The arousa build script implements the ant/build basic 
+      steps for managing dependencies. 
+      You can adjust on this script details like, in which 
+      folder you store the libs, where do you take the scripts
+      from, etc. 
+      This script file manages the basic build cycle.
+  -->
+
+  <!--
+      ........... Clean Dependencies .............
+      This step cleans the downloaded dependencies
+  -->
+  <target name="arousa-clean-lib" description="Cleans dependency lib" >
+    <echo> - Cleaning the dependency folder
+    </echo>
+    <delete dir="lib" failonerror="false" />
+    <mkdir dir="lib" />
+  </target>
+
+  <!--
+      ........... Init the Ivy Task .............
+      This target downloads the Ivy jar, unpacks it, and 
+      prepares the ivy infraestructure. 
+  -->
+  <target name="arousa-init-ivy" description="Init the Ivy Task" unless="${ivy.present}" >
+    <echo> - Cleaning conf/lib directory
+    </echo>
+    <delete dir="conf/lib" failonerror="false" />
+    <mkdir dir="conf/lib" />
+    <mkdir dir="conf/temp" />
+    <echo> - Downloading Apache Ivy, https://ant.apache.org/ivy [- >conf/temp]
+    </echo>
+    <get dest="conf/temp">
+      <url url="{$ivy.url}" /> 
+    </get>
+    <echo> - Expanding ivy [- >conf/lib]
+    </echo>
+    <unzip src="conf/temp/apache-ivy-*.zip" dest="conf/lib" />
+    <echo> - Deleting temp files
+    </echo>
+    <delete dir="conf/temp" />
+  </target>
+
+  <!--
+      ........... Check Ivy task configuration .............
+      This target cheks if ivy is present and lanches ivy 
+      initiallization if needed.
+  -->
+  <target name="arousa-check-ivy" >
+    <echo> - Checking ivy lib
+    </echo>
+    <available file="conf/lib" type="dir" property="ivy.present" />
+    <echo> - Ivy file presence : ${ivy.present}
+    </echo>
+  </target>
+
+  <!--
+      ........... Ivy Configuration Task .............
+      Ivy iniciallization control.
+  -->
+  <target name="arousa-init-ivy-task" depends="arousa-check-ivy" >
+    <echo> - Checking ivy presence
+    </echo>
+    <antcall target="arousa-init-ivy"  />   
+    <echo>Configuring ivy task
+    </echo>
+    <taskdef 
+	resource="org/apache/ivy/ant/antlib.xml"
+	uri="antlib:org.apache.ivy.ant">
+      <classpath>
+	<fileset  dir="conf/lib/apache-ivy-${ivy.version}" >
+	  <include name="*.jar" />
+	</fileset>
+	<fileset  dir="conf/lib/apache-ivy-${ivy.version}/lib" >
+	  <include name="*.jar" />
+	</fileset>
+      </classpath>
+    </taskdef>
+    <echo> - Ivy task configured
+    </echo>
+  </target>
+
+  <!--
+      ...........  Clean Dependencies .............
+      Cleass the cache, necerasy to update local 
+      dependencies from previous builds. 
+  -->
+  <target name="arousa-clean-cache" depends="arousa-init-ivy-task"
+	  description="Retrieve dependencies"  >
+    <ivy:settings id="arousa-settings" file="conf/arousa-ivy-settings.xml"/>
+    <ivy:cleancache settingsRef="arousa-settings" />
+  </target>
+
+  <!--
+      ........... Update dependencies .............
+      This task updates the project direct dependencies 
+      and cheks all the ivy initiallization first.      
+      After downloading dependencies, it unpacks the 
+      zip file contents to build or deps folder.
+      Resources, like images and css are copied to the 
+      build folder in subfolders. 
+      Xslts, Xprocs and Xquerys are copied and expanded 
+      to a special  "deps" folder to avoid mixing originals
+      with dependencies. 
+      From your script files, you can always refer to 
+      dependencies ../xslt/whatever.xsl or similar 
+      or ../xproc/somescript.xqy or ../../deps/xslt/ .... 
+      if your are working with a dependency script.  
+      This is one of the aspects that will probably need 
+      adjustment in different scenarios.
+  --> 
+  <target  name="arousa-update-dependencies" depends="arousa-init-ivy-task"
+	   description="Retrieve dependencies"  >
+    <echo>Retrieving dependencies
+    </echo>
+    
+    <!--
+	<ivy:info file="conf/arousa-ivy.xml"  />
+    -->
+    <echo> Retrieving file .................</echo>
+    <!--
+	<ivy:resolve conf="default" file="conf/arousa-ivy.xml" />
+    -->
+    <ivy:settings file="conf/arousa-ivy-settings.xml"/>
+    <ivy:retrieve  conf="default" file="conf/arousa-ivy.xml" />
+    <!--
+	<ivy:report graph="false" todir="report" />
+	<ivy:retrieve  file="conf/ivy.xml" />
+    -->
+    <echo>Arousa: Dependencies retrieved, expanding files</echo>
+    <mkdir dir="lib"  />
+    <mkdir dir="deps"  />
+    <unzip dest="deps">
+      <patternset>
+	<include name="**/*.xsl"/>
+	<include name="**/*.xqy"/>
+	<include name="**/*.xpl"/>
+	<exclude name="css/**"/>
+	<exclude name="img/**"/>
+	<exclude name="ico/**"/>
+	<exclude name="icon/**"/>
+	<exclude name="js/**"/>
+      </patternset>
+      <fileset dir="lib">
+	<include name="*.zip"/>
+      </fileset>
+    </unzip>
+    <unzip dest="build">
+      <patternset>
+	<exclude name="**/*.xsl"/>
+	<exclude name="**/*.xqy"/>
+	<exclude name="**/*.xpl"/>
+	<include name="css/**"/>
+	<include name="img/**"/>
+	<include name="ico/**"/>
+	<include name="icon/**"/>
+	<include name="js/**"/>
+      </patternset>
+      <fileset dir="lib">
+	<include name="*.zip"/>
+      </fileset>
+    </unzip>
+    
+  </target>
+
+  
+  <!--  
+       ........... Publish dependency .............
+       This target publishes the current project 
+       deliverable to the repository. 
+       Modifying this target you could adjust which 
+       files, from where are they taken, etc. 
+       Take into consideration that the published 
+       files must be aligned with the publications 
+       section on the ivy dependency file (arousa-ivy.xml).
+  -->
+  <target name="arousa-publish-dependency" depends="arousa-init-ivy-task"
+	  description="publish main dependency">
+    <ivy:settings file="conf/arousa-ivy-settings.xml"/>
+    <ivy:resolve file="conf/arousa-ivy.xml"  />
+    <!-- The current date -->
+    <tstamp>
+      <format property="now"
+	      pattern="yyyyMMddHHmmss"
+	      
+	      />
+    </tstamp>
+    <ivy:publish artifactspattern="dist/[artifact].[ext]"
+		 resolver="local"
+		 pubrevision="1.0"
+		 pubdate="${now}"
+		 status="integration"
+		 forcedeliver="true"
+		 overwrite="true"
+		 update="true"
+		 />
+
+  </target>
+
+
+  <!--
+      This target helps to adjust project name and 
+      path. 
+  -->
+  <target name="arousa-rename-project"
+	  description="Configures the initial project name" >
+    <input message="Please enter project Name:"
+	   addproperty="arousa.project.name"/>
+    <input message="Please enter project Path"
+	   addproperty="arousa.project.path"/>
+    <echo>
+      Your project coordinates will be adjusted to:
+      Name: ${arousa.project.name}
+      Path: ${arousa.project.path}
+    </echo>
+    <input message="Confirm coordinates and proceed (y/n)?"
+	   validargs="y,n"
+	   addproperty="do.continue"/>
+    <condition property="do.abort">
+      <equals arg1="n" arg2="${do.continue}"/>
+    </condition>
+    <fail if="do.abort">Process aborted by user. Please call
+    ant arousa-rename-project to launch again project name
+    and path or you can proceed to adjust it on the
+    conf/arousa-ivy.xml file.</fail>
+    <replace
+	encoding="UTF-8"
+	token="schema-html-report"
+	value="${arousa.project.name}"
+	>
+      <fileset dir="./..">
+	<include name="build.xml" />
+	<include name="conf/build.properties" />
+	<include name="conf/arousa-ivy.xml" />
+      </fileset>
+    </replace>
+    <replace
+	encoding="UTF-8"
+	token="initial-arousa-project-path"
+	value="${arousa.project.path}"
+	>
+      <fileset dir=".">
+	<include name="arousa-ivy.xml" />
+      </fileset>
+    </replace>     
+  </target>
+<!--
+    Estandard package task, wraps all the files from src 
+    to the zip file. 
+    From november 2022 we move from deps/xsl to deps/project-name/xsl
+    and so on. The number of dependencies is potentially big and 
+    debugging the process and following the files and where they come
+    will be easyer in the end.
+-->
+  <target name="arousa-package" >
+    <echo>Packaging project for arousa dependencies</echo>
+    <delete dir="dist" failonerror="false" />
+    <mkdir dir="dist" />
+
+    <mkdir dir="temp-dist" />
+    <mkdir dir="temp-dist/${arousa.project.name}" />
+
+    <copy todir="temp-dist/${arousa.project.name}" >
+      <fileset dir="src" >
+        <include name="**" />
+		<exclude name="css/**"/>
+		<exclude name="img/**"/>
+		<exclude name="ico/**"/>
+		<exclude name="icon/**"/>
+		<exclude name="js/**"/>
+      </fileset>
+    </copy>
+
+    <mkdir dir="temp-dist/css/${arousa.project.name}" />
+    <mkdir dir="temp-dist/img/${arousa.project.name}" />
+    <mkdir dir="temp-dist/ico/${arousa.project.name}" />
+    <mkdir dir="temp-dist/icon/${arousa.project.name}" />
+    <mkdir dir="temp-dist/js/${arousa.project.name}" />
+
+    <copy todir="temp-dist/css/${arousa.project.name}" >
+      <fileset dir="src/csss" erroronmissingdir="false" ><include name="**" /></fileset>
+    </copy>
+    <copy todir="temp-dist/img/${arousa.project.name}" >
+      <fileset dir="src/img" erroronmissingdir="false" ><include name="**" /></fileset>
+    </copy>
+    <copy todir="temp-dist/ico/${arousa.project.name}" >
+      <fileset dir="src/ico" erroronmissingdir="false" ><include name="**" /></fileset>
+    </copy>
+    <copy todir="temp-dist/icon/${arousa.project.name}" >
+      <fileset dir="src/icon" erroronmissingdir="false" ><include name="**" /></fileset>
+    </copy>
+    <copy todir="temp-dist/js/${arousa.project.name}" >
+      <fileset dir="src/js" erroronmissingdir="false" ><include name="**" /></fileset>
+    </copy>
+    
+    <mkdir dir="temp-doc" />
+    <mkdir dir="temp-doc/doc" />
+    <mkdir dir="temp-doc/doc/${arousa.project.name}" />
+    <copy todir="temp-doc/doc/${arousa.project.name}" >
+      <fileset dir="doc" >
+        <include name="**" />   
+      </fileset>
+    </copy>
+
+    <zip destfile="dist/${arousa.project.name}.zip" >
+      <zipfileset dir="temp-dist"  >
+	<include name="**"   /> 
+      </zipfileset>
+      <zipfileset dir="temp-doc"  >
+	<include name="**"   /> 
+      </zipfileset>
+    </zip>
+    <delete dir="temp-doc" failonerror="false" />
+    <delete dir="temp-dist" failonerror="false" />
+  </target>
+  
+</project>

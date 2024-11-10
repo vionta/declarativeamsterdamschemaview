@@ -1,0 +1,23 @@
+<ivy-module version="1.1">
+
+  <!--  ...... Enter the group and name of the project ... -->
+  <info organisation="net.vionta.xml.util"
+	module="schema-html-report"/>
+
+  <configurations>
+    <conf name="default" />
+  </configurations>
+
+  <publications>
+    <artifact name="schema-html-report" type="transformations" ext="zip" conf="default"/>
+  </publications>
+  
+  <dependencies defaultconf="default">
+    <!-- Sample dependency 
+    <dependency org="net.vionta.xsl.report" name="sysml-report" rev="1.0" >
+      <artifact name="sysml-report" type="packaged" ext="zip" />
+    </dependency>
+    -->
+  </dependencies>
+  
+</ivy-module>

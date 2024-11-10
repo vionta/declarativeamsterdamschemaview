@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="schema-html-report" basedir="." default="build">
+
+  <!-- Arousa Configuration directory -->
+  <property name="config.dir" value="conf"></property>
+
+  <!-- Main build properties -->
+  <property file="${config.dir}/build.properties" ></property>
+
+  <!-- Arousa build properties -->  
+  <import file="${config.dir}/arousa-build.xml" />
+
+  <!-- Xproc Import -->
+  <!-- XProc III Import 
+       Enable this import and adjust the Morgana XProc III Path 
+       in order to use xproc III
+       <import file="${config.dir}/xproc.xml" /> 
+  -->
+  
+  <!-- 
+       XProc I with NW Calabash
+       <import file="${config.dir}/calabash.xml"/>
+       Curl Helper macros 
+       <import file="${config.dir}/curl.xml"/>
+  -->
+
+  <target name="help"  >
+    <echo>
+      Main Targets : clean, build 
+    </echo>
+  </target>
+
+  <target name="clean"  >
+    <echo>
+      Cleaning ....... (add your cleaning steps here)
+    </echo>
+  </target>  
+  
+  <target name="build" >
+    <echo>
+      Building  ....... (add your xproc/xslt/etc. steps here)
+    </echo>
+    <!--
+        <xslt style="src/xsl/xs3p.xsl"
+	  basedir="test/data"
+	  destdir="build" 
+	  includes="**/*.xsd"
+	  extension=".html"
+	  />
+	<xslt style="src/xsl/schema-view.xsl"
+	  basedir="test/data"
+	  destdir="build" 
+	  includes="**/*.xsd"
+	  extension=".view.html"
+	  />
+	<xslt style="src/xsl/schema-view.detail.xsl"
+	  basedir="test/data"
+	  destdir="build" 
+	  includes="**/*.xsd"
+	  extension=".detail.html"
+	  />
+	 <xslt style="src/xsl/schema-view-dita.xsl"
+	  basedir="test/data"
+	  destdir="build" 
+	  includes="*.xsd"
+	  extension=".dita"
+	  />
+    -->
+    <!--
+	<xslt style="src/xsl/schema-generate-script-source.xsl"
+	  basedir="test/data/"
+	  destdir="temp" 
+	  extension=".pre.xml"
+	  >
+	  
+	  <include name="simple/*.xsd" />
+	  <include name="stratml3/*.xsd" />
+	</xslt>
+	<echo>Sanitizing pre-script</echo>
+	<xslt style="src/xsl/sanitize-prescript.xsl"
+	  basedir="temp"
+	  destdir="build" 
+	  includes="**/*.pre.xml"
+	  extension=".prescript.xml"
+	  />
+	  -->
+	<xslt style="src/xsl/simplified-schema-description.xsl"
+	  basedir="test/data/"
+	  destdir="build" 
+	  extension=".pre.xml"
+	  >
+	  <!--	  
+	      <include name="simple/*.xsd" />
+	  -->
+	  <include name="stratml3/*.xsd" />
+	</xslt>
+
+	<copy todir="build" >
+	  <fileset dir="src/css" >
+	  </fileset>
+	</copy>
+    <!-- Xslt example........... -->
+    <!--
+    <xslt style="src/xsl/schema-view.xsl"
+	  in="build/tasks.xml"
+	  out="build/content.txt" >
+    </xslt>
+    <xslt style="src/tasks/fodstasksaxml.xsl"
+	  basedir="temp"
+	  destdir="build" 
+	  includes="*.xml"
+	  extension="-tasks.xml"
+	  />
+    -->
+    <!-- XProc 3.0 Example........... -->
+    <!--
+    <echo>Running a simple task report on this build file</echo>
+    <xproc doc="build.xml" src="src/xpl/build-report.xpl" />
+    -->
+    <!-- XProc I call Example........... -->
+    <!--
+	<calab src="src/timeline/timeline.xpl"/>	
+    -->
+    <!-- XQuery Example........... -->
+    <!--
+	TODO :
+    -->
+  </target>
+
+  <!--
+  <target name="test" >
+    <delete dir="build" />
+    <xslt style="src/xsl/schema-generate-script-source2.xsl"
+	  basedir="test/data"
+	  destdir="temp" 
+	  includes="*Part3*.xsd"
+	  extension=".pre.xml"
+	  />
+    <echo>Sanitizing pre-script</echo>
+    <xslt style="src/xsl/sanitize-prescript2.xsl"
+	  basedir="temp"
+	  destdir="build" 
+	  includes="*.pre.xml"
+	  extension=".prescript.xml"
+	  />
+    
+    <copy todir="build" >
+      <fileset dir="src/css" >
+      </fileset>
+    </copy>
+  </target>
+-->
+  <target name="package" >
+    <antcall target="arousa-package" />
+  </target>
+
+  <target name="dist" >
+    <echo>Distributing project as an arousa dependency</echo>
+    <antcall target="package" />
+    <antcall target="arousa-publish-dependency" />
+  </target>
+</project>
+
